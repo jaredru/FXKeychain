@@ -67,6 +67,8 @@ typedef NS_ENUM(NSInteger, FXKeychainAccess)
 @property (nonatomic, readonly) NSString *accessGroup;
 @property (nonatomic, assign) FXKeychainAccess accessibility;
 
+@property (nonatomic, readonly) OSStatus lastStatus;
+
 - (id)initWithService:(NSString *)service
           accessGroup:(NSString *)accessGroup
         accessibility:(FXKeychainAccess)accessibility;

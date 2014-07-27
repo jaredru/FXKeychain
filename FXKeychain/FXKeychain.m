@@ -94,7 +94,6 @@
 
 #endif
 
-
 @implementation FXKeychain
 
 + (instancetype)defaultKeychain
@@ -155,10 +154,10 @@
     
     //recover data
     CFDataRef data = NULL;
-    OSStatus status = SecItemCopyMatching((__bridge CFDictionaryRef)query, (CFTypeRef *)&data);
-	if (status != errSecSuccess && status != errSecItemNotFound)
+    _lastStatus = SecItemCopyMatching((__bridge CFDictionaryRef)query, (CFTypeRef *)&data);
+	if (self.lastStatus != errSecSuccess && self.lastStatus != errSecItemNotFound)
     {
-		NSLog(@"FXKeychain failed to retrieve data for key '%@', error: %ld", key, (long)status);
+		NSLog(@"FXKeychain failed to retrieve data for key '%@', error: %ld", key, (long)self.lastStatus);
 	}
 	return CFBridgingRelease(data);
 }
@@ -234,21 +233,20 @@
 #endif
         
         //write data
-		OSStatus status = errSecSuccess;
 		if ([self dataForKey:key])
         {
 			//there's already existing data for this key, update it
-			status = SecItemUpdate((__bridge CFDictionaryRef)query, (__bridge CFDictionaryRef)update);
+			_lastStatus = SecItemUpdate((__bridge CFDictionaryRef)query, (__bridge CFDictionaryRef)update);
 		}
         else
         {
 			//no existing data, add a new item
             [query addEntriesFromDictionary:update];
-			status = SecItemAdd ((__bridge CFDictionaryRef)query, NULL);
+			_lastStatus = SecItemAdd ((__bridge CFDictionaryRef)query, NULL);
 		}
-        if (status != errSecSuccess)
+        if (self.lastStatus != errSecSuccess)
         {
-            NSLog(@"FXKeychain failed to store data for key '%@', error: %ld", key, (long)status);
+            NSLog(@"FXKeychain failed to store data for key '%@', error: %ld", key, (long)self.lastStatus);
             return NO;
         }
     }
@@ -258,20 +256,20 @@
         
 #if TARGET_OS_IPHONE
         
-        OSStatus status = SecItemDelete((__bridge CFDictionaryRef)query);
+        _lastStatus = SecItemDelete((__bridge CFDictionaryRef)query);
 #else
         CFTypeRef result = NULL;
         query[(__bridge id)kSecReturnRef] = (__bridge id)kCFBooleanTrue;
-        OSStatus status = SecItemCopyMatching((__bridge CFDictionaryRef)query, &result);
-        if (status == errSecSuccess)
+        _lastStatus = SecItemCopyMatching((__bridge CFDictionaryRef)query, &result);
+        if (self.lastStatus == errSecSuccess)
         {
-            status = SecKeychainItemDelete((SecKeychainItemRef) result);
+            _lastStatus = SecKeychainItemDelete((SecKeychainItemRef) result);
             CFRelease(result);
         }
 #endif
-        if (status != errSecSuccess)
+        if (self.lastStatus != errSecSuccess)
         {
-            NSLog(@"FXKeychain failed to delete data for key '%@', error: %ld", key, (long)status);
+            NSLog(@"FXKeychain failed to delete data for key '%@', error: %ld", key, (long)self.lastStatus);
             return NO;
         }
     }
